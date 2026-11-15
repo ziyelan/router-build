@@ -1,0 +1,18 @@
+CONFIG_TARGET_ramips=y
+CONFIG_TARGET_ramips_mt7621=y
+CONFIG_TARGET_ramips_mt7621_DEVICE_jdcloud_re-cp-02=y
+# 并发优化与硬件加速
+CONFIG_PACKAGE_kmod-mt7621-hw-hnat=y
+CONFIG_PACKAGE_kmod-tcp-bbr=y
+# 无缝漫游包
+CONFIG_PACKAGE_wpad-openssl=y
+CONFIG_PACKAGE_dawn=y
+CONFIG_PACKAGE_luci-app-dawn=y
+# 砍掉代理和污染插件 (绝对纯净)
+CONFIG_PACKAGE_luci-app-nikki=n
+CONFIG_PACKAGE_luci-app-openclash=n
+CONFIG_PACKAGE_luci-app-passwall=n
+CONFIG_PACKAGE_luci-app-ssr-plus=n
+CONFIG_PACKAGE_luci-app-adbyby-plus=n
+CONFIG_PACKAGE_luci-app-vlmcsd=n
+CONFIG_PACKAGE_luci-app-sqm=n
