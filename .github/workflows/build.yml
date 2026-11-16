@@ -3,6 +3,15 @@ on:
   repository_dispatch:
   workflow_dispatch:
     inputs:
+      target:
+        description: 'Build target (jdc-1 / arm64-main / all)'
+        required: true
+        default: 'jdc-1'
+        type: choice
+        options:
+          - jdc-1
+          - arm64-main
+          - all
       ssh:
         description: 'SSH connection to Actions'
         required: false
@@ -14,16 +23,32 @@ env:
   TZ: Asia/Shanghai
 
 jobs:
-  build:
+  prepare:
     runs-on: ubuntu-22.04
+    outputs:
+      targets: ${{ steps.set-matrix.outputs.targets }}
+    steps:
+      - id: set-matrix
+        run: |
+          INPUT_TARGET="${{ github.event.inputs.target || 'jdc-1' }}"
+          if [ "$INPUT_TARGET" = "all" ]; then
+            echo 'targets=["arm64-main","jdc-1"]' >> "$GITHUB_OUTPUT"
+          else
+            echo "targets=[\"$INPUT_TARGET\"]" >> "$GITHUB_OUTPUT"
+          fi
+
+  build:
+    needs: prepare
+    runs-on: ubuntu-22.04
+    timeout-minutes: 180
     strategy:
       fail-fast: false
       matrix:
-        target: [arm64-main, jdc-1]
+        target: ${{ fromJson(needs.prepare.outputs.targets) }}
 
     steps:
     - name: Checkout
-      uses: actions/checkout@main
+      uses: actions/checkout@v4
 
     - name: Initialization environment
       env:
@@ -50,8 +75,17 @@ jobs:
     - name: Load custom configuration
       run: |
         cat ${{ matrix.target }}.seed > openwrt/.config
+        if [ -d "files/${{ matrix.target }}" ]; then
+          mkdir -p openwrt/files
+          cp -r files/${{ matrix.target }}/. openwrt/files/
+          if [ -d "openwrt/files/etc/uci-defaults" ]; then
+            chmod +x openwrt/files/etc/uci-defaults/*
+          fi
+        fi
         cd openwrt
         make defconfig
+        echo "=== Verify key options in .config ==="
+        grep -E "CONFIG_TARGET_ramips_mt7621_DEVICE_jdcloud_re-cp-02|CONFIG_PACKAGE_kmod-nf-flow|CONFIG_PACKAGE_kmod-nft-offload|CONFIG_PACKAGE_kmod-nft-fullcone|CONFIG_PACKAGE_kmod-tcp-bbr|CONFIG_PACKAGE_wpad-openssl|CONFIG_PACKAGE_dawn|CONFIG_PACKAGE_umdns|CONFIG_PACKAGE_odhcpd|CONFIG_PACKAGE_odhcp6c|CONFIG_PACKAGE_luci-app-upnp|CONFIG_PACKAGE_automount" .config || true
 
     - name: SSH connection to Actions
       uses: P3TERX/ssh2actions@v1.0.0
@@ -73,7 +107,7 @@ jobs:
         make -j$(nproc) || make -j1 || make -j1 V=s
 
     - name: Upload firmware directory
-      uses: actions/upload-artifact@main
+      uses: actions/upload-artifact@v4
       with:
         name: ImmortalWrt_23.05_${{ matrix.target }}
         path: openwrt/bin/targets/*/*/*.*
