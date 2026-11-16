@@ -18,9 +18,11 @@ CONFIG_PACKAGE_umdns=n
 CONFIG_PACKAGE_odhcpd-ipv6only=n
 CONFIG_PACKAGE_odhcp6c=n
 
-# 轻量 UPnP 映射支持（默认关闭，辅助手机端 VPN / 游戏穿透）
+# 轻量 UPnP 映射支持与 Tailscale 组网（保留 TUN 内核模块）
 CONFIG_PACKAGE_luci-app-upnp=y
 CONFIG_PACKAGE_luci-i18n-upnp-zh-cn=y
+CONFIG_PACKAGE_kmod-tun=y
+CONFIG_PACKAGE_tailscale=y
 
 # 精简多余存储自动挂载及科学/去广告/流控插件（保留 ext4 驱动以支持内置 eMMC 挂载）
 CONFIG_PACKAGE_automount=n
